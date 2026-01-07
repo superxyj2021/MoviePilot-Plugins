@@ -8,6 +8,8 @@ from http.cookies import SimpleCookie
 from app.helper.cookiecloud import CookieCloudHelper
 from app.log import logger
 
+import time
+import json
 
 class DoubanHelper:
 
@@ -29,7 +31,6 @@ class DoubanHelper:
             'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4,en-GB;q=0.2,zh-TW;q=0.2',
             'Connection': 'keep-alive',
             'DNT': '1',
-            'HOST': 'www.douban.com'
         }
 
         if self.cookies.get('__utmz'):
@@ -138,6 +139,94 @@ class DoubanHelper:
                 return False
         logger.error(response.text)
         return False
+
+    # ---------------------------
+    # 通用工具
+    # ---------------------------
+    
+    def clean_title(self, text: str) -> str:
+        text = text.strip()
+        text = text.split("\n")[0]
+        text = text.split("/")[0]
+        text = text.replace("[可播放]", "")
+        return text.strip()
+    
+    
+    def extract_douban_id(self, url: str) -> str | None:
+        m = re.search(r"/subject/(\d+)/", url)
+        return m.group(1) if m else None
+    
+    
+    def extract_chinese_name(self, name: str) -> str | None:
+        parts = re.findall(r"[\u4e00-\u9fff]+", name)
+        if not parts:
+            return None
+        return "".join(parts)
+    
+    
+    # ---------------------------
+    # 用户全部影视（含评分日期）
+    # ---------------------------
+    
+    def fetch_all_movies(self, douban_user: str = None):
+        #statuses = ["collect", "wish"]
+        statuses = ["collect"]
+        for status in statuses:
+            start = 0
+            empty_pages = 0
+    
+            while True:
+                logger.info(f"⏳ 抓取豆瓣影音记录，start={start}")
+
+                url = f"https://movie.douban.com/people/{douban_user}/{status}"
+                params = {
+                    "start": start,
+                    "sort": "time",
+                    "rating": "all",
+                    "filter": "all",
+                    "mode": "grid"
+                }               
+                resp = requests.get(url, headers=self.headers, cookies=self.cookies, params=params, timeout=10)
+                resp.raise_for_status()
+    
+                soup = BeautifulSoup(resp.text, "html.parser")
+                items = soup.select(".item")
+    
+                if not items:
+                    empty_pages += 1
+                    if empty_pages >= 2:
+                        break
+                else:
+                    empty_pages = 0
+    
+                for item in items:
+                    link_el = item.select_one(".info a")
+                    if not link_el:
+                        continue
+    
+                    title = self.clean_title(link_el.text)
+                    detail_url = link_el["href"]
+                    douban_id = self.extract_douban_id(detail_url)
+    
+                    # ⭐ 评分日期（只在“看过”里有）
+                    rating_date = None
+                    if status == "collect":
+                        date_el = item.select_one(".date")
+                        if date_el:
+                            rating_date = date_el.text.strip()
+                            
+                    yield {
+                        "douban_id": douban_id,
+                        "title": title,
+                        "status": "看过" if status == "collect" else "想看",
+                        "rating_date": rating_date,
+                    }
+    
+                    time.sleep(1)
+    
+                start += 15
+                time.sleep(2)
+            
 
 
 if __name__ == "__main__":
