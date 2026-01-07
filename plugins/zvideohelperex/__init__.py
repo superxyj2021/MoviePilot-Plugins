@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import sqlite3
 import json
-from app.plugins.zvideohelper.DoubanHelper import *
+from app.plugins.zvideohelperex.DoubanHelper import *
 from enum import Enum
 
 import pytz
@@ -23,11 +23,11 @@ class DoubanStatus(Enum):
     DONE = "collect"
 
 
-class ZvideoHelper(_PluginBase):
+class ZvideoHelperEx(_PluginBase):
     # 插件名称
-    plugin_name = "极影视助手"
+    plugin_name = "极影视豆瓣同步"
     # 插件描述
-    plugin_desc = "极影视功能扩展"
+    plugin_desc = "在极影视和豆瓣间双向同步再看已看信息。"
     # 插件图标
     plugin_icon = "zvideo.png"
     # 插件版本
@@ -37,7 +37,7 @@ class ZvideoHelper(_PluginBase):
     # 作者主页
     author_url = "https://github.com/superxyj2021"
     # 插件配置项ID前缀
-    plugin_config_prefix = "zvideohelper"
+    plugin_config_prefix = "zvideohelperex"
     # 加载顺序
     plugin_order = 1
     # 可使用的用户级别
@@ -97,15 +97,15 @@ class ZvideoHelper(_PluginBase):
 
         # 获取历史数据
         self._cached_data = (
-            self.get_data("zvideohelper")
-            if self.get_data("zvideohelper") is not None
+            self.get_data("zvideohelperex")
+            if self.get_data("zvideohelperex") is not None
             else dict()
         )
         # 加载模块
         if self._onlyonce:
             if self._clean_cache:
                 self._cached_data = {}
-                self.save_data("zvideohelper", self._cached_data)
+                self.save_data("zvideohelperex", self._cached_data)
                 self._clean_cache = False
             # 检查数据库路径是否存在
             path = Path(self._db_path)
@@ -117,19 +117,19 @@ class ZvideoHelper(_PluginBase):
                 if self._notify:
                     self.post_message(
                         mtype=NotificationType.SiteMessage,
-                        title=f"【极影视助手】",
+                        title=f"【极影视豆瓣同步】",
                         text=f"极影视数据库路径不存在: {self._db_path}",
                     )
                 return
 
             self._scheduler = BackgroundScheduler(timezone=settings.TZ)
-            logger.info(f"极影视助手服务启动，立即运行一次")
+            logger.info(f"极影视豆瓣同步服务启动，立即运行一次")
             self._scheduler.add_job(
                 func=self.do_job,
                 trigger="date",
                 run_date=datetime.now(tz=pytz.timezone(settings.TZ))
                 + timedelta(seconds=3),
-                name="极影视助手",
+                name="极影视豆瓣同步",
             )
             # 关闭一次性开关
             self._onlyonce = False
@@ -239,8 +239,8 @@ class ZvideoHelper(_PluginBase):
         if self._enabled and self._cron:
             return [
                 {
-                    "id": "ZvideoHelper",
-                    "name": "极影视助手",
+                    "id": "ZvideoHelperEx",
+                    "name": "极影视豆瓣同步",
                     "trigger": CronTrigger.from_crontab(self._cron),
                     "func": self.do_job,
                     "kwargs": {},
@@ -332,7 +332,7 @@ class ZvideoHelper(_PluginBase):
             if self._notify and len(message) > 0:
                 self.post_message(
                     mtype=NotificationType.SiteMessage,
-                    title="【极影视助手】",
+                    title="【极影视豆瓣同步】",
                     text=message,
                 )
 
@@ -440,7 +440,7 @@ class ZvideoHelper(_PluginBase):
             if self._notify and len(message) > 0:
                 self.post_message(
                     mtype=NotificationType.SiteMessage,
-                    title="【极影视助手】",
+                    title="【极影视豆瓣同步】",
                     text=message,
                 )
 
@@ -542,7 +542,7 @@ class ZvideoHelper(_PluginBase):
         self.set_douban_watching()
         self.set_douban_done()
         # 缓存数据
-        self.save_data("zvideohelper", self._cached_data)
+        self.save_data("zvideohelperex", self._cached_data)
 
     def get_form(self) -> Tuple[List[dict], Dict[str, Any]]:
         return [
