@@ -309,7 +309,7 @@ class TrimMediaHelper(_PluginBase):
                     logger.info(f"✅ 找到豆瓣ID: {title} -> 豆瓣ID: {douban_id} (IMDB: {imdb_id})")
                 else:
                     logger.error(f"未找到豆瓣ID: {title} (IMDB: {imdb_id})")
-
+                    
         except sqlite3.Error as e:
             logger.error(f"数据库查询错误: {e}")
             if self._notify:
@@ -423,7 +423,7 @@ class TrimMediaHelper(_PluginBase):
                 
                 # 4. 调用 get_douban_id 函数将 imdb_id 转换为豆瓣ID
                 douban_id = self._douban_helper.get_douban_id(imdb_id)
-                
+                                
                 if not douban_id:  # 豆瓣ID 为 None、空字符串或 "0"
                     logger.info(f"ℹ️ 未找到豆瓣ID: {title} (IMDB: {imdb_id})，尝试通过标题搜索...")
                  
