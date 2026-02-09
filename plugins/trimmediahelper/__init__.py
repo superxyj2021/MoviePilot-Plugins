@@ -706,7 +706,7 @@ class TrimMediaHelper(_PluginBase):
 
     def sync_douban_status(self):
         self.set_douban_watching()
-        #self.set_douban_done()
+        self.set_douban_done()
 
     def get_form(self) -> Tuple[List[dict], Dict[str, Any]]:
         return [
