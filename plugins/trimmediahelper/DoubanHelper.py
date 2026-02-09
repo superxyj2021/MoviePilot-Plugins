@@ -66,9 +66,8 @@ class DoubanHelper:
         self.cookies['ck'] = ck
 
     def get_douban_id(self, imdb_id: str) -> str:
-        url = f"https://www.douban.com/search?cat=1002&q={title}"
         # 尝试直接使用 IMDb ID 搜索
-        url = f"https://www.douban.com/search?cat=1002&q=tt{imdb_id}"
+        url = f"https://www.douban.com/search?cat=1002&q={imdb_id}"
         print(f"请求URL: {url}")
         response = requests.get(url, headers=self.headers, cookies=self.cookies)
         try:
