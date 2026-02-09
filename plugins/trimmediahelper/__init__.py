@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import sqlite3
 import json
-from app.plugins.zvideohelperex.DoubanHelper import *
+from app.plugins.trimmediahelper.DoubanHelper import *
 from enum import Enum
 
 import pytz
