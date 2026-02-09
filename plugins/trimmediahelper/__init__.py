@@ -277,7 +277,7 @@ class TrimMediaHelper(_PluginBase):
                     )
                 )
                 -- 直接连接查询父级数据
-                SELECT DISTINCT p.imdb_id
+                SELECT DISTINCT p.imdb_id, p.title
                 FROM filtered_items fi
                 INNER JOIN item p ON fi.parent_guid = p.guid
                 WHERE fi.parent_guid IS NOT NULL
