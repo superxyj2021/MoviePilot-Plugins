@@ -237,7 +237,7 @@ class DoubanHelper:
         """
         try:
             # 基础随机延迟 1-3 秒
-            time.sleep(random.uniform(1, 3))
+            time.sleep(random.uniform(1, 2))
             
             response = requests.get(url, headers=self.headers, timeout=10)
             response.raise_for_status()
