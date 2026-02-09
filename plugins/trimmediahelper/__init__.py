@@ -242,74 +242,103 @@ class TrimMediaHelper(_PluginBase):
             self.sync_douban_status()
 
 
-    def set_douban_watching(self):
-        logger.info("⏳ 开始同步在看状态...")
+    def set_douban_done(self):
+        logger.info("⏳ 开始同步已看状态...")
         watching_douban_id = []
+        
+        # 获取用户名，如果没有配置则使用默认值或返回错误
+        username = self._trimmedia_user
+        if not username:
+            logger.error("飞牛影视用户名未配置")
+            if self._notify:
+                self.post_message(
+                    mtype=NotificationType.SiteMessage,
+                    title=f"【飞牛影视豆瓣同步】",
+                    text=f"飞牛影视用户名未配置，请检查设置",
+                )
+            return
+        
         try:
             conn = sqlite3.connect(self._db_path)
             cursor = conn.cursor()
-
+            
             # 使用新的 SQL 查询语句
             sql = """
-                WITH watched_items AS (
+            SELECT 
+                i2.imdb_id, i2.title
+            FROM 
+                item i2
+            WHERE 
+                i2.guid IN (
                     SELECT DISTINCT iup.item_guid
                     FROM item_user_play iup
                     INNER JOIN user u ON iup.user_guid = u.guid
                     WHERE iup.watched = 1
                       AND u.username = ?
-                      AND iup.type IN ('Episode', 'Season', 'TV')
-                ),
-                item_with_groups AS (
-                    SELECT i.*
-                    FROM item i
-                    WHERE i.guid IN (SELECT item_guid FROM watched_items)
-                      AND i.imdb_id IS NOT NULL
-                      AND i.imdb_id != ''
-                ),
-                filtered_items AS (
-                    SELECT iwg.*
-                    FROM item_with_groups iwg
-                    WHERE iwg.imdb_id IN (
-                        SELECT imdb_id
-                        FROM item_with_groups
-                        GROUP BY imdb_id
-                        HAVING COUNT(CASE WHEN type IN ('TV', 'Season') THEN 1 END) = 0
-                    )
                 )
-                -- 直接连接查询父级数据
-                SELECT DISTINCT p.imdb_id, p.title
-                FROM filtered_items fi
-                INNER JOIN item p ON fi.parent_guid = p.guid
-                WHERE fi.parent_guid IS NOT NULL
-                  AND fi.parent_guid != ''
-                ORDER BY p.type, p.title;
+                AND i2.type IN ('Movie', 'TV', 'Season')
+                AND i2.guid IN (
+                    SELECT MIN(guid)
+                    FROM item
+                    WHERE type IN ('Movie', 'TV', 'Season')
+                      AND imdb_id IS NOT NULL
+                      AND imdb_id != ''
+                    GROUP BY imdb_id
+                    HAVING COUNT(*) >= 1
+                )
             """
-            cursor.execute(sql, (self._trimmedia_user,))
+            
+            cursor.execute(sql, (username,))
             results = cursor.fetchall()
+            
+            logger.info(f"查询到 {len(results)} 个已观看项目")
+            
+            # 进度跟踪变量
+            total_items = len(results)
+            processed_items = 0
+            current_progress = 0
             
             for row in results:
                 if self._should_stop:
-                    logger.info("检测到中断请求，停止同步在看状态...")
+                    logger.info("检测到中断请求，停止同步已看状态...")
                     break
                     
                 imdb_id = row[0]
                 title = row[1]
                 
-                # 1. 先用 imdb_id 判断有没有处理过
-                if self._cached_data.get(imdb_id) is not None:
+                # 更新进度
+                processed_items += 1
+                new_progress = int((processed_items / total_items) * 100)
+                if new_progress > current_progress:
+                    current_progress = new_progress
+                    logger.info(f"处理进度: {current_progress}% ({processed_items}/{total_items})")
+
+                # 先用 imdb_id 判断有没有处理过
+                # 注意：这里需要确保缓存键是 imdb_id
+                if self._cached_data.get(imdb_id) == DoubanStatus.DONE.value:
                     logger.info(f"ℹ️ 已处理过: {title} (IMDB: {imdb_id})，跳过...")
                     continue
-                    
-                # 2. 调用 get_douban_id 方法通过 imdb_id 查询豆瓣 ID
+                
+                if not imdb_id or imdb_id == "":  # IMDb ID 为空直接跳过
+                    logger.info(f"ℹ️ IMDb ID 为空: {title}，跳过...")
+                    continue
+                
+                # 4. 调用 get_douban_id 函数将 imdb_id 转换为豆瓣ID
                 douban_id = self._douban_helper.get_douban_id(imdb_id)
- 
-                # 相应的判断逻辑：
-                if douban_id and douban_id != "0":  # 注意：douban_id 现在是字符串
+                                
+                if not douban_id:  # 豆瓣ID 为 None、空字符串或 "0"
+                    logger.info(f"ℹ️ 未找到豆瓣ID: {title} (IMDB: {imdb_id})，尝试通过标题搜索...")
+                 
+                if douban_id == "0":  # 豆瓣ID为0的直接跳过
+                    logger.info(f"ℹ️ 豆瓣ID为0: {title} (IMDB: {imdb_id})，跳过...")
+                    continue
+                                
+                if douban_id is not None:
                     watching_douban_id.append((imdb_id, douban_id, title))
                     logger.info(f"✅ 找到豆瓣ID: {title} -> 豆瓣ID: {douban_id} (IMDB: {imdb_id})")
                 else:
                     logger.error(f"未找到豆瓣ID: {title} (IMDB: {imdb_id})")
-                    
+
         except sqlite3.Error as e:
             logger.error(f"数据库查询错误: {e}")
             if self._notify:
@@ -327,31 +356,55 @@ class TrimMediaHelper(_PluginBase):
             if conn:
                 conn.close()
 
-        # 标记豆瓣状态
+        # 标记豆瓣已看状态
         message = ""
+        total_to_process = len(watching_douban_id)
+        processed_count = 0
+        current_progress = 0
+        
         for imdb_id, douban_id, title in watching_douban_id:
-            status = DoubanStatus.WATCHING.value
+            if self._should_stop:
+                logger.info("检测到中断请求，停止处理...")
+                break
+                
+            processed_count += 1
+            new_progress = int((processed_count / total_to_process) * 100)
+            if new_progress > current_progress:
+                current_progress = new_progress
+                logger.info(f"标记进度: {current_progress}% ({processed_count}/{total_to_process})")
+            
+            status = DoubanStatus.DONE.value
             ret = self._douban_helper.set_watching_status(
                 subject_id=douban_id, status=status, private=self._private
             )
             if ret:
                 # 使用 imdb_id 作为缓存键
                 self._cached_data[imdb_id] = status
-                logger.info(f"✅ {title} (豆瓣ID: {douban_id}, IMDB: {imdb_id})，已标记为在看")
-                message += f"{title}，已标记为在看\n"
+                logger.info(f"✅ title: {title}, douban_id: {douban_id}, IMDb: {imdb_id}，已标记为已看")
+                message += f"{title}，已标记为已看\n"
             else:
-                logger.error(f"⚠️ {title} (豆瓣ID: {douban_id}, IMDB: {imdb_id})，标记在看失败")
-                message += f"{title}，***标记在看失败***\n"
+                logger.error(f"⚠️ title: {title}, douban_id: {douban_id}, IMDb: {imdb_id}，标记已看失败")
+                message += f"{title}，***标记已看失败***\n"
+            
+            # 添加延迟避免请求过快
+            time.sleep(1)
         
-        if self._notify and len(message) > 0:
+        if self._notify:
+            if len(message) > 0:
+                self.post_message(
+                    mtype=NotificationType.SiteMessage,
+                    title="【飞牛影视豆瓣同步】",
+                    text=message,
+                )
+            # 发送完成通知
             self.post_message(
                 mtype=NotificationType.SiteMessage,
                 title="【飞牛影视豆瓣同步】",
-                text=message,
+                text=f"已看状态同步完成！共处理 {processed_count}/{total_to_process} 个项目",
             )
+            
         # 保存缓存数据
         self.save_data("trimmediahelper", self._cached_data)
-
 
         
     def reverse_sync_douban_status(self):
