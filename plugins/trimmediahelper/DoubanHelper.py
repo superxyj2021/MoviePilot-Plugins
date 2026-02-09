@@ -67,8 +67,8 @@ class DoubanHelper:
         self.cookies['ck'] = ck
 
     def get_douban_id(self, imdb_id: str) -> str:
-        # 基础随机延迟 1-3 秒
-        time.sleep(random.uniform(6, 10))
+        # 基础随机延迟 7-11 秒,避免被豆瓣反爬
+        time.sleep(random.uniform(7, 11))
         url = f"https://www.douban.com/search?cat=1002&q={imdb_id}"
         print(f"请求URL: {url}")
         response = requests.get(url, headers=self.headers, cookies=self.cookies)
