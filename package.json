@@ -1,7 +1,7 @@
 {
     "ZvideoHelperEx": {
         "name": "极影视豆瓣同步",
-        "description": "在极影视和豆瓣间双向同步再看已看信息",
+        "description": "在极影视和豆瓣间双向同步在看已看信息",
         "labels": "极空间",
         "version": "2.1",
         "icon": "zvideo.png",
@@ -11,6 +11,19 @@
         "history": {
             "v2.1": "基于DzAvril大大的版本，实现双向同步功能，去除个人觉得没什么用的豆瓣评分",
             "v1.0": "同步极影视在看/已看状态到豆瓣"
+        }
+    }
+    "TrimMediaHelper": {
+        "name": "飞牛影视豆瓣同步",
+        "description": "在飞牛影视和豆瓣间双向同步在看已看信息",
+        "labels": "极空间",
+        "version": "2.0",
+        "icon": "zvideo.png",
+        "author": "superxyj2021",
+        "level": 1,
+        "v2": true,
+        "history": {
+            "v1.0": "实现双向同步功能，这样万一重建飞牛影视库也能找回已看过的，虽然还是有些会遗漏，总比没有好。",
         }
     }
 }
