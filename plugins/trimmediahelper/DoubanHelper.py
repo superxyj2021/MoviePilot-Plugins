@@ -67,7 +67,7 @@ class DoubanHelper:
 
     def get_douban_id(self, imdb_id: str) -> str:
         # 基础随机延迟 1-3 秒
-        time.sleep(random.uniform(1, 3))
+        time.sleep(1.5)
         url = f"https://www.douban.com/search?cat=1002&q={imdb_id}"
         print(f"请求URL: {url}")
         response = requests.get(url, headers=self.headers, cookies=self.cookies)
@@ -224,7 +224,7 @@ class DoubanHelper:
                 })
 
             start += 15
-            time.sleep(3 + random.random() * 3)
+            time.sleep(3)
 
         print(f"{STATUS_MAP[status]} 共获取 {len(movies)} 条")
         return movies
@@ -236,7 +236,7 @@ class DoubanHelper:
         """
         try:
             # 基础随机延迟 1-3 秒
-            time.sleep(random.uniform(1, 3))
+            time.sleep(1.5)
             
             response = requests.get(url, headers=self.headers, timeout=10)
             response.raise_for_status()
