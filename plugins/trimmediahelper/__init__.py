@@ -64,7 +64,7 @@ class TrimMediaHelper(_PluginBase):
     # 豆瓣错误的 IMDb ID 映射表（正确的 -> 豆瓣上错误的）
     _incorrect_imdb_map = {
         "tt0139774": "tt0377169",  # 龙珠GT 正确->豆瓣
-        "tt0377169": "tt0139774",  # 龙珠GT 正确->正确
+        "tt0377169": "tt0139774",  # 龙珠GT 豆瓣->正确
         # 可以继续添加其他错误的映射
     }
 
