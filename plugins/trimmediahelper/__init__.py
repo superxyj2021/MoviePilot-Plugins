@@ -71,6 +71,8 @@ class TrimMediaHelper(_PluginBase):
     # 豆瓣不存在的 IMDb ID 列表（直接跳过）
     _nonexistent_imdb_list = [
         "tt6475714",  # 怪物猎人
+        "tt13016388",  # 三体第一季
+        "tt6773596",  # 反击第六季        
         # 可以继续添加其他不存在的 IMDb ID
     ]
     
