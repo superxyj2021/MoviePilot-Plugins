@@ -169,7 +169,8 @@ class DoubanHelper:
         if not parts:
             return None
         return "".join(parts)
-    
+        
+        
     def get_user_movies(self, username: str, status: str = "collect"):
         movies = []
         start = 0
@@ -183,16 +184,15 @@ class DoubanHelper:
         logger.info(f"开始获取用户 {username} 的 {status_map.get(status, status)} 列表...")
 
         while True:
-            url = f"https://movie.douban.com/people/{username}/{status}"
-            params = {
-                "start": start,
-                "sort": "time",
-                "rating": "all",
-                "filter": "all",
-                "mode": "grid"
-            }               
-
             try:
+                url = f"https://movie.douban.com/people/{username}/{status}"
+                params = {
+                    "start": start,
+                    "sort": "time",
+                    "rating": "all",
+                    "filter": "all",
+                    "mode": "grid"
+                }               
                 resp = requests.get(url, headers=self.headers, cookies=self.cookies, params=params, timeout=10)
                 resp.raise_for_status()
             except Exception as e:
