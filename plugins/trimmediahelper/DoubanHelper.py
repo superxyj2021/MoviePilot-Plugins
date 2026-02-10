@@ -171,15 +171,15 @@ class DoubanHelper:
         return "".join(parts)
     
 
-    # HEADERS = {
-    #    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    #    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    #    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-    #    'Accept-Encoding': 'gzip, deflate, br',
-    #    'Referer': 'https://movie.douban.com/',
-    #    'Connection': 'keep-alive',
-    #    'Upgrade-Insecure-Requests': '1',
-    #}
+     HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+       'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Referer': 'https://movie.douban.com/',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+    }
 
     def get_user_movies(self, username: str, status: str = "collect"):
         movies = []
@@ -194,9 +194,19 @@ class DoubanHelper:
         logger.info(f"开始获取用户 {username} 的 {status_map.get(status, status)} 列表...")
 
         while True:
-            url = f"https://movie.douban.com/people/{username}/{status}?start={start}&sort=time&rating=all&filter=all&mode=grid"
+            url = f"https://movie.douban.com/people/{username}/{status}"
+            params = {
+                "start": start,
+                "sort": "time",
+                "rating": "all",
+                "filter": "all",
+                "mode": "grid"
+            }               
+            resp = requests.get(url, headers=self.headers, cookies=self.cookies, params=params, timeout=10)
+            resp.raise_for_status()
+
             try:
-                resp = requests.get(url, headers=HEADERS, timeout=30)
+                resp = requests.get(url, headers=self.headers, cookies=self.cookies, params=params, timeout=10)
                 resp.raise_for_status()
             except Exception as e:
                 print(f"请求列表失败 {url}: {e}")
