@@ -221,7 +221,7 @@ class DoubanHelper:
                     simplified_title = title_full.split(' / ')[0].strip()
                 douban_id = link.strip('/').split('/')[-1]
 
-                imdb_id = get_imdb_id(link)
+                imdb_id = self.get_imdb_id(link)
                 movies.append({
                     'douban_id': douban_id,
                     'title': simplified_title,
