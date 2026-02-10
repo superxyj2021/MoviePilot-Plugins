@@ -181,7 +181,7 @@ class DoubanHelper:
     #    'Upgrade-Insecure-Requests': '1',
     #}
 
-    def get_user_movies(username, status):
+    def get_user_movies(self, username: str, status: str = "collect"):
         movies = []
         start = 0
         print(f"开始获取 {STATUS_MAP[status]} 列表...")

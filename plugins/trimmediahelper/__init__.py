@@ -617,7 +617,7 @@ class TrimMediaHelper(_PluginBase):
             # 1. 通过get_user_movies获得用户在豆瓣上全部的已看数据
             logger.info(f"正在获取豆瓣用户 {self._douban_user} 的已看电影数据...")
             douban_movies = self._douban_helper.get_user_movies(
-                douban_user=self._douban_user, 
+                username=self._douban_user,  # 修改参数名
                 status='collect'
             )
             
