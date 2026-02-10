@@ -28,7 +28,7 @@ class TrimMediaHelper(_PluginBase):
     # 插件描述
     plugin_desc = "在飞牛影视和豆瓣间双向同步再看已看信息。"
     # 插件图标
-    plugin_icon = "zvideo.png"
+    plugin_icon = "fnos.png"
     # 插件版本
     plugin_version = "2.0"
     # 插件作者
