@@ -184,7 +184,15 @@ class DoubanHelper:
     def get_user_movies(self, username: str, status: str = "collect"):
         movies = []
         start = 0
-        print(f"开始获取 {STATUS_MAP[status]} 列表...")
+        
+        # 状态映射
+        status_map = {
+            "collect": "已看",
+            "do": "在看",
+            "wish": "想看"
+        }
+        logger.info(f"开始获取用户 {username} 的 {status_map.get(status, status)} 列表...")
+
         while True:
             url = f"https://movie.douban.com/people/{username}/{status}?start={start}&sort=time&rating=all&filter=all&mode=grid"
             try:
@@ -200,7 +208,7 @@ class DoubanHelper:
                 # 额外检查是否被反爬（页面有“验证”或登录提示）
                 if "请验证" in resp.text or "登录" in resp.text:
                     print("豆瓣检测到爬虫或需要登录，请检查您的收藏是否公开！")
-                print(f"{STATUS_MAP[status]} 列表获取完毕（本页无数据）")
+                logger.info(f"{status_map.get(status, status)} 列表获取完毕（本页无数据）")
                 break
 
             print(f"第 {start // 15 + 1} 页，获取到 {len(items)} 条")
@@ -221,13 +229,13 @@ class DoubanHelper:
                     'douban_id': douban_id,
                     'title': simplified_title,
                     'imdb_id': imdb_id, 
-                    'status': STATUS_MAP[status]
+                    'status': status_map.get(status, status)
                 })
 
             start += 15
             time.sleep(random.uniform(5, 10))
 
-        print(f"{STATUS_MAP[status]} 共获取 {len(movies)} 条")
+        logger.info(f"{status_map.get(status, status)} 共获取 {len(movies)} 条")
         return movies
 
     def get_imdb_id(self, url: str) -> str:
