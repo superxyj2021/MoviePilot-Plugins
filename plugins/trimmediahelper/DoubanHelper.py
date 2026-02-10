@@ -202,8 +202,6 @@ class DoubanHelper:
                 "filter": "all",
                 "mode": "grid"
             }               
-            resp = requests.get(url, headers=self.headers, cookies=self.cookies, params=params, timeout=10)
-            resp.raise_for_status()
 
             try:
                 resp = requests.get(url, headers=self.headers, cookies=self.cookies, params=params, timeout=10)
