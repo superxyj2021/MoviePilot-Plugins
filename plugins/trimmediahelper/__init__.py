@@ -720,9 +720,9 @@ class TrimMediaHelper(_PluginBase):
                                     visible, create_time, update_time
                                 ) VALUES (
                                     ?, ?, 0, 1,
-                                    NULL, NULL, NULL, NULL,
-                                    -1, NULL, 0, ?,
-                                    1, CAST(strftime('%s', 'now') AS INTEGER), CAST(strftime('%s', 'now') AS INTEGER)
+                                    '', '', '', '',
+                                    -1, '', 0, ?,
+                                    1, CAST(strftime('%s', 'now') AS INTEGER) * 1000, CAST(strftime('%s', 'now') AS INTEGER) * 1000
                                 )
                             """, (item_guid, user_guid, item_type))
                             logger.info(f"✅ 插入观看记录: {title} (guid: {item_guid}, type: {item_type})")
