@@ -61,7 +61,19 @@ class TrimMediaHelper(_PluginBase):
     _scheduler: Optional[BackgroundScheduler] = None
     _should_stop = False
 
-   
+    # 豆瓣错误的 IMDb ID 映射表（正确的 -> 豆瓣上错误的）
+    _incorrect_imdb_map = {
+        "tt0139774": "tt0377169",  # 龙珠GT 正确->豆瓣
+        "tt0377169": "tt0139774",  # 龙珠GT 正确->正确
+        # 可以继续添加其他错误的映射
+    }
+
+    # 豆瓣不存在的 IMDb ID 列表（直接跳过）
+    _nonexistent_imdb_list = [
+        "tt6475714",  # 怪物猎人
+        # 可以继续添加其他不存在的 IMDb ID
+    ]
+    
     def init_plugin(self, config: dict = None):
         self._should_stop = False
         # 停止现有任务
@@ -299,7 +311,21 @@ class TrimMediaHelper(_PluginBase):
                 if self._cached_data.get(imdb_id) is not None:
                     logger.info(f"ℹ️ 已处理过: {title} (IMDB: {imdb_id})，跳过...")
                     continue
-                    
+                
+                # 检查是否是豆瓣不存在的 IMDb ID
+                if imdb_id in self._nonexistent_imdb_list:
+                    logger.info(f"⚠️ 跳过豆瓣不存在的 IMDb ID: {title} (IMDB: {imdb_id})")
+                    # 将其标记为已处理，避免重复检查
+                    self._cached_data[imdb_id] = DoubanStatus.WATCHING.value
+                    continue
+
+                # 检查并修正错误的 IMDb ID
+                corrected_imdb_id = self._incorrect_imdb_map.get(imdb_id, imdb_id)
+                if corrected_imdb_id != imdb_id:
+                    logger.info(f"⚠️ 检测到错误的 IMDb ID: {imdb_id} -> 修正为: {corrected_imdb_id} ({title})")
+                    imdb_id = corrected_imdb_id
+                            
+                
                 # 2. 调用 get_douban_id 方法通过 imdb_id 查询豆瓣 ID
                 douban_id = self._douban_helper.get_douban_id(imdb_id)
  
@@ -433,19 +459,24 @@ class TrimMediaHelper(_PluginBase):
                     logger.info(f"ℹ️ IMDb ID 为空: {title}，跳过...")
                     continue
                 
+                # 检查是否是豆瓣不存在的 IMDb ID
+                if imdb_id in self._nonexistent_imdb_list:
+                    logger.info(f"⚠️ 跳过豆瓣不存在的 IMDb ID: {title} (IMDB: {imdb_id})")
+                    # 将其标记为已处理，避免重复检查
+                    self._cached_data[imdb_id] = DoubanStatus.DONE.value
+                    continue
+
+                # 检查并修正错误的 IMDb ID
+                corrected_imdb_id = self._incorrect_imdb_map.get(imdb_id, imdb_id)
+                if corrected_imdb_id != imdb_id:
+                    logger.info(f"⚠️ 检测到错误的 IMDb ID: {imdb_id} -> 修正为: {corrected_imdb_id} ({title})")
+                    imdb_id = corrected_imdb_id
+                
                 # 4. 调用 get_douban_id 函数将 imdb_id 转换为豆瓣ID
                 douban_id = self._douban_helper.get_douban_id(imdb_id)
                                 
                 if not douban_id:  # 豆瓣ID 为 None、空字符串或 "0"
                     logger.info(f"ℹ️ 未找到豆瓣ID: {title} (IMDB: {imdb_id})，尝试通过标题搜索...")
-                    # 如果通过 IMDb ID 找不到，尝试使用标题搜索
-                    douban_id_from_title = self._douban_helper.get_douban_id(title)
-                    if douban_id_from_title and douban_id_from_title != "0":
-                        douban_id = douban_id_from_title
-                        logger.info(f"✅ 通过标题找到豆瓣ID: {title} -> 豆瓣ID: {douban_id}")
-                    else:
-                        logger.error(f"⚠️ 未找到豆瓣ID: {title} (IMDB: {imdb_id})")
-                        continue
                  
                 if douban_id == "0":  # 豆瓣ID为0的直接跳过
                     logger.info(f"ℹ️ 豆瓣ID为0: {title} (IMDB: {imdb_id})，跳过...")
@@ -621,6 +652,12 @@ class TrimMediaHelper(_PluginBase):
                     logger.info(f"ℹ️ 已处理过: {title} (IMDB: {imdb_id})，跳过...")
                     skipped_count += 1
                     continue
+                    
+                # 检查并修正错误的 IMDb ID，将豆瓣错误的IMDB转换回飞牛里面正确的
+                corrected_imdb_id = self._incorrect_imdb_map.get(imdb_id, imdb_id)
+                if corrected_imdb_id != imdb_id:
+                    logger.info(f"⚠️ 检测到错误的 IMDb ID: {imdb_id} -> 修正为: {corrected_imdb_id} ({title})")
+                    imdb_id = corrected_imdb_id
                 
                 try:
                     # 第一步：查询获取guid和type
