@@ -196,7 +196,7 @@ class DoubanHelper:
                 resp = requests.get(url, headers=self.headers, cookies=self.cookies, params=params, timeout=10)
                 resp.raise_for_status()
             except Exception as e:
-                print(f"请求列表失败 {url}: {e}")
+                logger.error(f"请求列表失败 {url}: {e}")
                 break
 
             soup = BeautifulSoup(resp.text, 'html.parser')
@@ -204,11 +204,11 @@ class DoubanHelper:
             if not items:
                 # 额外检查是否被反爬（页面有“验证”或登录提示）
                 if "请验证" in resp.text or "登录" in resp.text:
-                    print("豆瓣检测到爬虫或需要登录，请检查您的收藏是否公开！")
+                    logger.warning("豆瓣检测到爬虫或需要登录，请检查您的收藏是否公开！")
                 logger.info(f"{status_map.get(status, status)} 列表获取完毕（本页无数据）")
                 break
 
-            print(f"第 {start // 15 + 1} 页，获取到 {len(items)} 条")
+            logger.info(f"第 {start // 15 + 1} 页，获取到 {len(items)} 条")
             for item in items:
                 link_elem = item.find('a', class_='nbg')
                 if not link_elem:
