@@ -438,6 +438,14 @@ class TrimMediaHelper(_PluginBase):
                                 
                 if not douban_id:  # 豆瓣ID 为 None、空字符串或 "0"
                     logger.info(f"ℹ️ 未找到豆瓣ID: {title} (IMDB: {imdb_id})，尝试通过标题搜索...")
+                    # 如果通过 IMDb ID 找不到，尝试使用标题搜索
+                    douban_id_from_title = self._douban_helper.get_douban_id(title)
+                    if douban_id_from_title and douban_id_from_title != "0":
+                        douban_id = douban_id_from_title
+                        logger.info(f"✅ 通过标题找到豆瓣ID: {title} -> 豆瓣ID: {douban_id}")
+                    else:
+                        logger.error(f"⚠️ 未找到豆瓣ID: {title} (IMDB: {imdb_id})")
+                        continue
                  
                 if douban_id == "0":  # 豆瓣ID为0的直接跳过
                     logger.info(f"ℹ️ 豆瓣ID为0: {title} (IMDB: {imdb_id})，跳过...")
